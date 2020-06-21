@@ -136,26 +136,27 @@ pprcv = 32
 pprcvdb2 = int(pprcv/2)
 x_test = np.ones((117, pprcv, pprcv, pprcv))
 
-i = 0
-for j in range(0,583):
-    try:
-        tmp = np.load('/content/drive/My Drive/datas/test/test/candidate' + str(j) + '.npz')
-        voxel = tmp['voxel']
-        seg = tmp['seg']
-        x_test[i] = (voxel * seg)[50 - pprcvdb2:50 + pprcvdb2, 50 - pprcvdb2:50 + pprcvdb2, 50 - pprcvdb2:50 + pprcvdb2]
-        i = i + 1
-    except:
-        continue
-gc.collect()
+i = 0
+path = "/content/drive/My Drive/datas/test/test"
+path_list = os.listdir(path)
+path_list.sort()  # 将candidate按照顺序排列，和SampleSubmission里的candidate顺序相同
+for filename in path_list:
+    tmp = np.load(os.path.join(path, filename))
 
+    voxel = tmp['voxel']
+    seg = tmp['seg']
+
+    x_test[i] = (voxel * seg)[50 - pprcvdb2:50 + pprcvdb2, 50 - pprcvdb2:50 + pprcvdb2, 50 - pprcvdb2:50 + pprcvdb2]
+
+    i = i + 1
+    
 x_test = x_test.reshape(x_test.shape[0], pprcv, pprcv, pprcv, 1)
 model = get_compiled()
 model.load_weights('/content/drive/My Drive/weights/weights.50.h5')
 pre_result_1 = model.predict(x_test, batch_size, verbose=1)
 model.load_weights('/content/drive/My Drive/weights/weights.30.h5')
 pre_result_2 = model.predict(x_test, batch_size, verbose=1)
-pre_result = (pre_result_1+pre_result_2)/2
-print(pre_result)
+pre_result = (pre_result_1 + pre_result_2) / 2
 
 my_goal = np.loadtxt("/content/drive/My Drive/datas/sampleSubmission.csv", str, delimiter=",", skiprows=1, usecols=0)
 np.savetxt('/content/drive/My Drive/datas/Submission.csv',np.column_stack((my_goal,pre_result[:,0])), delimiter=',', fmt='%s', header='name,predicted', comments='')
